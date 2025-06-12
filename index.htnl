@@ -1,0 +1,664 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Pemesanan Tiket Pesawat Indonesia - Pembayaran QRIS</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&amp;display=swap" rel="stylesheet"/>
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet" />
+  <style>
+    /* Reset & base */
+    * {
+      margin: 0; padding: 0; box-sizing: border-box;
+    }
+    html {
+      font-size: 16px;
+      font-family: 'Inter', sans-serif;
+      background: #f9fbfd;
+      color: #111;
+      scroll-behavior: smooth;
+    }
+    body {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      background: linear-gradient(135deg, #0a2342 0%, #168aad 90%);
+      color: #f0f4f8;
+      -webkit-font-smoothing: antialiased;
+    }
+    a {
+      text-decoration: none;
+      color: inherit;
+    }
+
+    /* Container max width */
+    .container {
+      width: min(100% - 32px, 1200px);
+      margin: 0 auto;
+      padding: 32px 0;
+    }
+
+    /* Header */
+    header {
+      background: rgba(10, 35, 66, 0.95);
+      position: sticky;
+      top: 0;
+      z-index: 1100;
+      box-shadow: 0 2px 12px rgb(0 0 0 / 0.3);
+      padding: 1rem 1rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .logo {
+      font-weight: 700;
+      font-size: 1.5rem;
+      letter-spacing: 1.2px;
+      color: #57c7d4;
+      user-select: none;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .logo svg {
+      width: 32px;
+      height: 32px;
+      fill: #39b3c5;
+    }
+    nav {
+      display: none;
+    }
+    /* Mobile hamburger */
+    .menu-btn {
+      background: none;
+      border: none;
+      color: #57c7d4;
+      cursor: pointer;
+      font-size: 2rem;
+      display: flex;
+      align-items: center;
+    }
+
+    /* Show nav on desktop */
+    @media(min-width: 1025px) {
+      nav {
+        display: flex;
+        gap: 2rem;
+        align-items: center;
+      }
+      .menu-btn {
+        display: none;
+      }
+      nav a {
+        font-weight: 600;
+        padding: 0.5rem 1rem;
+        border-radius: 8px;
+        transition: background-color 0.2s ease;
+      }
+      nav a:hover,
+      nav a:focus {
+        background-color: #39b3c5;
+        outline: none;
+      }
+    }
+
+    /* Main Content */
+    main {
+      flex-grow: 1;
+      padding: 32px 16px;
+      max-width: 1200px;
+      margin: 0 auto;
+      width: 100%;
+      background: #e9f1f7;
+      border-radius: 12px;
+      box-shadow: 0 16px 32px rgb(0 0 0 / 0.1);
+      color: #0a2342;
+      display: none; /* initially hidden until user clicks Mulai */
+    }
+
+    h1, h2, h3 {
+      font-weight: 700;
+      margin-bottom: 16px;
+      line-height: 1.2;
+    }
+
+    h1 {
+      font-size: 2.5rem;
+      color: #0a2342;
+      text-align: center;
+      margin-bottom: 40px;
+    }
+    h2 {
+      font-size: 1.8rem;
+      margin-bottom: 24px;
+      border-bottom: 2px solid #39b3c5;
+      padding-bottom: 8px;
+      max-width: 280px;
+    }
+
+    /* Flight list grid */
+    .flights-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 24px;
+      margin-bottom: 48px;
+    }
+    @media(min-width: 768px){
+      .flights-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+    @media(min-width: 1280px){
+      .flights-grid {
+        grid-template-columns: repeat(3, 1fr);
+      }
+    }
+    .flight-card {
+      background: white;
+      border-radius: 16px;
+      padding: 24px 20px;
+      box-shadow: 0 8px 20px rgb(0 0 0 / 0.05);
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      transition: box-shadow 0.3s ease;
+    }
+    .flight-card:hover {
+      box-shadow: 0 16px 36px rgb(0 0 0 / 0.15);
+    }
+
+    .flight-header {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      margin-bottom: 16px;
+    }
+    .airline-logo {
+      width: 48px;
+      height: 48px;
+      border-radius: 8px;
+      background-color: #39b3c5;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+    .airline-logo img {
+      max-width: 36px;
+      max-height: 36px;
+    }
+    .flight-info {
+      flex-grow: 1;
+    }
+    .flight-info h3 {
+      margin-bottom: 4px;
+      font-size: 1.25rem;
+      color: #0a2342;
+    }
+    .flight-route {
+      font-size: 0.95rem;
+      color: #577f8a;
+      font-weight: 600;
+    }
+
+    .flight-date,
+    .flight-price {
+      font-weight: 700;
+      font-size: 1.1rem;
+      margin-top: 12px;
+      text-align: right;
+      color: #0a2342;
+    }
+
+    button.book-btn {
+      margin-top: 20px;
+      background: #39b3c5;
+      border: none;
+      border-radius: 12px;
+      color: white;
+      padding: 12px 20px;
+      font-size: 1.1rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: background-color 0.3s ease;
+      align-self: stretch;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 8px;
+    }
+    button.book-btn:hover,
+    button.book-btn:focus {
+      background: #27a1b3;
+      outline: none;
+    }
+
+    /* Booking form */
+    #booking {
+      background: white;
+      padding: 32px 40px;
+      border-radius: 16px;
+      box-shadow: 0 10px 30px rgb(0 0 0 / 0.1);
+      max-width: 600px;
+      margin-left: auto;
+      margin-right: auto;
+      margin-bottom: 48px;
+    }
+    #booking h2 {
+      text-align: center;
+      margin-bottom: 32px;
+    }
+    form {
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+    }
+    label {
+      font-weight: 600;
+      color: #0a2342;
+      margin-bottom: 6px;
+      display: block;
+    }
+    input, select {
+      font-size: 1rem;
+      padding: 10px 14px;
+      border-radius: 8px;
+      border: 1.8px solid #c1cdd9;
+      transition: border-color 0.3s ease;
+      color: #0a2342;
+      width: 100%;
+    }
+    input:focus,
+    select:focus {
+      border-color: #39b3c5;
+      outline: none;
+      box-shadow: 0 0 8px #39b3c5aa;
+    }
+    input[readonly] {
+      background: #eef6fb;
+      cursor: not-allowed;
+    }
+    .submit-btn {
+      background: #0a2342;
+      color: #39b3c5;
+      font-weight: 700;
+      font-size: 1.2rem;
+      border: none;
+      padding: 14px 0;
+      border-radius: 12px;
+      cursor: pointer;
+      transition: background-color 0.3s ease;
+      margin-top: 12px;
+    }
+    .submit-btn:hover,
+    .submit-btn:focus {
+      background: #082538;
+      outline: none;
+    }
+
+    /* Payment Section */
+    #payment-section {
+      background: white;
+      padding: 32px;
+      border-radius: 16px;
+      box-shadow: 0 10px 30px rgb(0 0 0 / 0.1);
+      max-width: 400px;
+      margin: 0 auto 64px auto;
+      color: #0a2342;
+      text-align: center;
+      display: none; /* Initially hidden */
+    }
+    #payment-section h2 {
+      margin-bottom: 24px;
+      color: #0a2342;
+    }
+    #qris-container {
+      margin-top: 16px;
+    }
+    #qris-container canvas {
+      margin: 0 auto;
+      display: block;
+    }
+    #payment-info {
+      font-size: 1rem;
+      margin-top: 16px;
+      color: #555;
+    }
+
+    footer {
+      background: #0a2342;
+      color: #57c7d4;
+      padding: 24px 16px;
+      text-align: center;
+      font-size: 0.9rem;
+      user-select: none;
+      display: none; /* hidden initially */
+    }
+
+    /* Initial Splash Screen */
+    #splash {
+      position: fixed;
+      inset: 0;
+      background: linear-gradient(135deg, #168aad 0%, #0a2342 90%);
+      color: #f0f4f8;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 0 24px;
+      text-align: center;
+      z-index: 2000;
+    }
+    #splash h1 {
+      font-size: 3rem;
+      line-height: 1.1;
+      margin-bottom: 16px;
+      font-weight: 700;
+      text-shadow: 0 4px 10px rgba(0,0,0,0.3);
+      max-width: 360px;
+    }
+    #splash p {
+      font-size: 1.3rem;
+      margin-bottom: 32px;
+      max-width: 360px;
+      font-weight: 500;
+      text-shadow: 0 3px 6px rgba(0,0,0,0.25);
+    }
+    #start-btn {
+      background: #39b3c5;
+      border: none;
+      color: white;
+      padding: 18px 60px;
+      font-size: 1.25rem;
+      font-weight: 700;
+      border-radius: 12px;
+      cursor: pointer;
+      box-shadow: 0 8px 15px rgb(57 179 197 / 0.5);
+      transition: background-color 0.3s ease, transform 0.2s ease;
+      user-select: none;
+    }
+    #start-btn:hover,
+    #start-btn:focus {
+      background: #27a1b3;
+      outline: none;
+      transform: scale(1.05);
+      box-shadow: 0 10px 20px rgb(39 161 179 / 0.7);
+    }
+  </style>
+</head>
+<body>
+  <div id="splash" role="dialog" aria-modal="true" aria-labelledby="welcome-title" aria-describedby="welcome-desc">
+    <h1 id="welcome-title">Pembelian Tiket Pesawat Terpercaya</h1>
+    <p id="welcome-desc">Pesan tiket pesawat terbaik dan terpercaya di Indonesia dengan harga sesuai internasional dan pembayaran mudah via QRIS.</p>
+    <button id="start-btn" aria-label="Mulai pemesanan tiket pesawat">Mulai</button>
+  </div>
+
+  <header role="banner" aria-hidden="true">
+    <div class="container" style="display:flex; align-items:center; justify-content:space-between;">
+      <a href="#" class="logo" aria-label="Beranda Pemesanan Tiket Pesawat Indonesia">
+        <!-- Inline airplane SVG icon for logo -->
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" aria-hidden="true" focusable="false" role="img" >
+          <path d="M2.5 19.5 13 12 2.5 4.5 2 10l7 2-7 2zM19 7.5v9l-5.5-4.5L19 7.5zM15 19h2v-5l-2-1.5v6.5z"/>
+        </svg>
+        TerbangIndonesia
+      </a>
+      <button class="menu-btn" aria-label="Toggle menu" aria-expanded="false">
+        <span class="material-icons">menu</span>
+      </button>
+      <nav role="navigation" aria-label="Menu utama">
+        <a href="#flights">Pesawat</a>
+        <a href="#booking">Pesan Tiket</a>
+        <a href="#payment-section">Pembayaran</a>
+      </nav>
+    </div>
+  </header>
+
+  <main aria-hidden="true">
+    <h1 tabindex="-1">Pemesanan Tiket Pesawat dengan Pembayaran QRIS</h1>
+    <section id="flights" aria-labelledby="flights-title">
+      <h2 id="flights-title">Pilih Pesawat dan Destinasi</h2>
+      <div class="flights-grid" role="list" aria-label="Daftar penerbangan yang tersedia">
+        <!-- Flight cards dynamically inserted by JS -->
+      </div>
+    </section>
+
+    <section id="booking" aria-labelledby="booking-title" tabindex="-1">
+      <h2 id="booking-title">Formulir Pemesanan Tiket</h2>
+      <form novalidate aria-describedby="booking-desc" aria-live="polite">
+        <p id="booking-desc" class="sr-only">Isi formulir dengan data valid untuk memesan tiket</p>
+        <label for="inputName">Nama Lengkap</label>
+        <input type="text" id="inputName" name="name" placeholder="Nama lengkap Anda" autocomplete="name" required />
+
+        <label for="inputEmail">Email</label>
+        <input type="email" id="inputEmail" name="email" placeholder="email@domain.com" autocomplete="email" required />
+
+        <label for="selectFlight">Pilih Penerbangan</label>
+        <select id="selectFlight" name="flight" required aria-required="true" aria-describedby="flightHelp">
+          <option value="" disabled selected>Pilih pesawat dan destinasi</option>
+          <!-- options inserted dynamically -->
+        </select>
+        <small id="flightHelp" style="color:#555;">Harga akan otomatis muncul setelah pilih penerbangan.</small>
+
+        <label for="inputDate">Tanggal Keberangkatan</label>
+        <input type="date" id="inputDate" name="date" required min="" />
+
+        <label for="inputPrice">Harga (IDR)</label>
+        <input type="text" id="inputPrice" name="price" readonly aria-readonly="true" />
+
+        <button type="submit" class="submit-btn" aria-label="Pesan tiket">Pesan Tiket</button>
+      </form>
+    </section>
+
+    <section id="payment-section" aria-live="polite" aria-label="Informasi pembayaran QRIS" tabindex="-1">
+      <h2>Pembayaran QRIS</h2>
+      <p>Setelah melakukan pemesanan, mohon lakukan pembayaran dengan memindai QR Code QRIS yang muncul di bawah:</p>
+      <div id="qris-container" aria-label="Kode QR QRIS untuk pembayaran"></div>
+      <div id="payment-info" aria-live="assertive"></div>
+    </section>
+  </main>
+
+  <footer aria-hidden="true">
+    &copy; 2025 TerbangIndonesia - Pemesanan tiket pesawat dengan QRIS pembayaran resmi di Indonesia.
+  </footer>
+
+  <script src="https://cdn.jsdelivr.net/npm/qrcode/build/qrcode.min.js"></script>
+  <script>
+    (() => {
+      const splash = document.getElementById('splash');
+      const main = document.querySelector('main');
+      const header = document.querySelector('header');
+      const footer = document.querySelector('footer');
+      const startBtn = document.getElementById('start-btn');
+
+      startBtn.addEventListener('click', () => {
+        splash.style.display = 'none';
+        main.style.display = 'block';
+        header.setAttribute('aria-hidden', 'false');
+        footer.style.display = 'block';
+        footer.setAttribute('aria-hidden', 'false');
+        main.setAttribute('aria-hidden', 'false');
+        // Focus main heading for accessibility
+        const mainHeading = main.querySelector('h1');
+        if(mainHeading){
+          mainHeading.setAttribute('tabindex', '-1');
+          mainHeading.focus();
+        }
+      });
+
+      const flights = [
+        {
+          id: 'GA-01',
+          airline: 'Garuda Indonesia',
+          logo: 'Garuda Indonesia.jpg',
+          route: 'Jakarta (CGK) → Bali (DPS)',
+          price: 1800000
+        },
+        {
+          id: 'JT-02',
+          airline: 'Lion Air',
+          logo: 'Lion air.jpg',
+          route: 'Jakarta (CGK) → Surabaya (SUB)',
+          price: 950000
+        },
+        {
+          id: 'SJ-03',
+          airline: 'Sriwijaya Air',
+          logo: 'Sriwijaya air.jpg',
+          route: 'Jakarta (CGK) → Medan (KNO)',
+          price: 1200000
+        },
+        {
+          id: 'QZ-04',
+          airline: 'AirAsia Indonesia',
+          logo: 'air asia.jpg',
+          route: 'Jakarta (CGK) → Kuala Lumpur (KUL)',
+          price: 2700000
+        },
+        {
+          id: 'ID-05',
+          airline: 'Batik Air',
+          logo: 'Batik air.jpg',
+          route: 'Jakarta (CGK) → Yogyakarta (JOG)',
+          price: 1050000
+        }
+      ];
+
+      // Utility function currency format
+      function formatIDR(price){
+        return new Intl.NumberFormat('id-ID', {style:'currency', currency:'IDR'}).format(price);
+      }
+
+      const flightsGrid = document.querySelector('.flights-grid');
+      const selectFlight = document.getElementById('selectFlight');
+      const inputPrice = document.getElementById('inputPrice');
+      const bookingForm = document.querySelector('#booking form');
+      const inputDate = document.getElementById('inputDate');
+      const paymentContainer = document.getElementById('qris-container');
+      const paymentInfo = document.getElementById('payment-info');
+
+      // Render flights cards
+      function renderFlightCards(){
+        flightsGrid.innerHTML = '';
+        flights.forEach(flight => {
+          const card = document.createElement('article');
+          card.className = 'flight-card';
+          card.setAttribute('role', 'listitem');
+          card.innerHTML = `
+            <div class="flight-header">
+              <div class="airline-logo" aria-hidden="true">
+                <img src="${flight.logo}" alt="Logo ${flight.airline}" />
+              </div>
+              <div class="flight-info">
+                <h3>${flight.airline}</h3>
+                <div class="flight-route">${flight.route}</div>
+              </div>
+            </div>
+            <div class="flight-price">${formatIDR(flight.price)}</div>
+            <button class="book-btn" data-id="${flight.id}" aria-label="Pesan tiket ${flight.airline} rute ${flight.route}">Pesan Tiket <span class="material-icons">shopping_cart</span></button>
+          `;
+          flightsGrid.appendChild(card);
+        });
+      }
+
+      // Render select options
+      function renderSelectOptions(){
+        selectFlight.innerHTML = '<option value="" disabled selected>Pilih pesawat dan destinasi</option>';
+        flights.forEach(flight => {
+          const option = document.createElement('option');
+          option.value = flight.id;
+          option.textContent = `${flight.airline} - ${flight.route} (${formatIDR(flight.price)})`;
+          selectFlight.appendChild(option);
+        });
+      }
+
+      // Update price input when flight selection changes
+      selectFlight.addEventListener('change', (e) => {
+        const selectedId = e.target.value;
+        const flight = flights.find(f => f.id === selectedId);
+        if(flight){
+          inputPrice.value = formatIDR(flight.price);
+          // Set minimum date to today for booking
+          const today = new Date().toISOString().split('T')[0];
+          inputDate.min = today;
+        } else {
+          inputPrice.value = '';
+          inputDate.min = '';
+        }
+      });
+
+      // Book button in flight cards click handler
+      flightsGrid.addEventListener('click', (e) => {
+        if(e.target.closest('button.book-btn')){
+          const btn = e.target.closest('button.book-btn');
+          const flightId = btn.dataset.id;
+          selectFlight.value = flightId;
+          const flight = flights.find(f => f.id === flightId);
+          if(flight){
+            inputPrice.value = formatIDR(flight.price);
+            const today = new Date().toISOString().split('T')[0];
+            inputDate.min = today;
+            inputDate.value = today;
+          }
+          window.location.href = '#booking';
+          document.getElementById('inputName').focus();
+        }
+      });
+
+      bookingForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+        // Simple validation check
+        if(!bookingForm.reportValidity()) return;
+
+        // Gather data
+        const name = bookingForm.name.value.trim();
+        const email = bookingForm.email.value.trim();
+        const flightId = bookingForm.flight.value;
+        const date = bookingForm.date.value;
+        if(!name || !email || !flightId || !date){
+          alert('Mohon isi semua data dengan benar.');
+          return;
+        }
+
+        const flight = flights.find(f => f.id === flightId);
+        if(!flight){
+          alert('Pilih penerbangan yang benar.');
+          return;
+        }
+
+        // Generate QRIS data string simulating payment details
+        const paymentAmount = flight.price;
+        const paymentInfoText = `Pembayaran tiket atas nama ${name} untuk penerbangan ${flight.airline} rute ${flight.route} tanggal ${date}. Jumlah: ${formatIDR(paymentAmount)}`;
+        paymentInfo.textContent = paymentInfoText;
+
+        // Generate QR Code for payment (simulate QRIS payment string)
+        const qrisData = `https://qris.example/payment?amount=${paymentAmount}&name=${encodeURIComponent(name)}&flight=${encodeURIComponent(flightId)}&date=${encodeURIComponent(date)}`;
+        paymentContainer.style.display = 'block';
+        paymentContainer.innerHTML = ''; // clear previous
+        QRCode.toCanvas(qrisData, {width: 240, margin: 2, color: {dark:'#0a2342', light:'#e9f1f7'}}, (error, canvas) => {
+          if(error){
+            paymentContainer.textContent = 'Gagal memuat QR Code. Silahkan coba lagi.';
+            return;
+          }
+          paymentContainer.appendChild(canvas);
+        });
+
+        // Show payment section
+        document.getElementById('payment-section').style.display = 'block';
+
+        // Scroll to payment section
+        window.location.href = '#payment-section';
+
+        // Disable form while waiting for payment simulation
+        bookingForm.querySelector('.submit-btn').disabled = true;
+        alert('Silahkan scan QR Code untuk melakukan pembayaran via QRIS.');
+      });
+
+      // Initial render
+      renderFlight
+renderSelectOptions();
+
+    })();
+  </script>
+</body>
+</html>
+
+    
